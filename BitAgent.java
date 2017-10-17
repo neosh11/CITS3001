@@ -10,30 +10,39 @@ public class BitAgent implements MSWAgent  {
 	public static final int RIGHT = 2;
 
 	private int hand[];
+	private int grave[];
+	public boolean otherSuits[][];
+
 	
-	private ArrayList<Integer> priorityH;
+	public ArrayList<Card> table;
 
-	private ArrayList<Card> table;
-
+	
+	private String leftAgent;
+	//Ignore not used for now
+	private String rightAgent;
+	
+	
 	public BitAgent() {
-
-		priorityH = new ArrayList<Integer>();
+		
 		table = new ArrayList<Card>();
 	}
 
 	@Override
 	public void setup(String agentLeft, String agentRight) {
-		// TODO Auto-generated method stub
-
+		leftAgent = agentLeft;
+		rightAgent = agentRight;
 	}
 
 	@Override
 	public void seeHand(List<Card> hand, int order) {
+
+		this.hand = new int[4];
+		this.grave = new int[4];
+		this.otherSuits = new boolean[2][4];
+
 		for(int i = 0; i < hand.size(); i++)
 		{
 			Card c = hand.get(i);
-			this.hand = new int[4];
-			
 			switch(c.suit)
 			{
 			case SPADES: this.hand[0] = (this.hand[0]|(1 << c.rank-2)); break;
@@ -44,33 +53,72 @@ public class BitAgent implements MSWAgent  {
 		}
 	}
 
+
 	@Override
 	public Card[] discard() {
-		
+//TODO
+		//if(order != 0) return new int[] {};
 		Card[] discard = new Card[4];
 		for(int i = 0; i<4;i++)
 		{
-			int indexHand = minimumHandIndex(hand);
-			int remove = Integer.lowestOneBit(hand[indexHand]);
-			hand[indexHand] = hand[indexHand]&(~(1<< remove));
-			discard[i] = retCard(indexHand, remove);;
+			int indexHand = removeWorstHand(hand);
+			int remove = Integer.lowestOneBit(hand[indexHand]);	
+			hand[indexHand] = hand[indexHand]&(~remove);
+			grave[indexHand] = grave[indexHand]|(remove);
+			discard[i] = retCard(indexHand, binlog(remove));
 		}
-
 		return discard;
-
 	}
 
 	@Override
 	public Card playCard() {
+
+
+		int currentSuit = 0;
+		if(!table.isEmpty())
+			currentSuit = suitVal(table.get(0));
+		
+		int ar [] = beatable(hand, grave, currentSuit, table, otherSuits);
+		
+		hand[ar[0]] = hand[ar[0]]&(~(1<< ar[1]));
+		grave[ar[0]] = grave[ar[0]]|(1<< ar[1]);
+		return retCard(ar[0], ar[1]);
 		
 		
+
 	}
 
 
 
 	@Override
 	public void seeCard(Card card, String agent) {
-
+		
+		if(table.size() >= 1)
+		{
+			if(!card.suit.equals(table.get(0).suit))
+			{
+				if(agent.equals(leftAgent))
+				{
+					otherSuits[0][(suitVal(table.get(0)))] = true;
+				}
+				else
+				{
+					otherSuits[1][(suitVal(table.get(0)))] = true;
+				}
+			}
+		}
+		
+		grave[suitVal(card)] = grave[suitVal(card)] | (1 << card.rank-2);
+		
+		for(int i =0; i < 4; i++)
+		{
+			if((this.grave[i]|this.hand[i]) == (int) (Math.pow(2, 13)-1))
+			{
+				otherSuits[1][i] = true;
+				otherSuits[0][i] = true;
+			}
+		}
+			
 		table.add(card);
 	}
 
@@ -78,6 +126,7 @@ public class BitAgent implements MSWAgent  {
 	//Cards on table removed
 	@Override
 	public void seeResult(String winner) {
+		
 		table.clear();
 	}
 
@@ -90,52 +139,22 @@ public class BitAgent implements MSWAgent  {
 	@Override
 	public String sayName() {
 
-		return "47";
+		return "47Bit";
 	}
 
-	private int goodCard(ArrayList<Card> hand, Suit s)
+	/**
+	 * Function that returns which Suit the worst Card is in 
+	 * @param hand Hand to be passed
+	 * @return Suit where the bad card lies
+	 */
+	private int removeWorstHand(int hand[])
 	{
-		
-		int index = 0;
-		int max = -1000;
 
-		for(int d = 0; d < priorityH.size(); d++)
-		{
-			if(priorityH.get(d) > max && hand.get(d).equals(s))
-			{
-				max = priorityH.get(d);
-				index = d;
-			}
-		}
-		return index;
-	}
-	
-	
-	private int trashCard(ArrayList<Card> hand, Suit s)
-	{
-		
-		int index = 0;
-		int min = 1000;
-
-		for(int d = 0; d < priorityH.size(); d++)
-		{
-			if(priorityH.get(d) < min && hand.get(d).equals(s))
-			{
-				min = priorityH.get(d);
-				index = d;
-			}
-		}
-		return index;
-	}
-
-	private int minimumHandIndex(int hand[])
-	{
-		
 		int pc [] = new int[3];
-		
-		pc[0]= Integer.bitCount(hand[1]);
-		pc[1]= Integer.bitCount(hand[2]);
-		pc[2]= Integer.bitCount(hand[3]);
+
+		pc[0]= Integer.lowestOneBit(hand[1]);
+		pc[1]= Integer.lowestOneBit(hand[2]);
+		pc[2]= Integer.lowestOneBit(hand[3]);
 
 		int min = 50;
 		int sec = 0;
@@ -147,13 +166,61 @@ public class BitAgent implements MSWAgent  {
 				min = pc[i];
 			}
 		}
-		
+
 		return sec;
+	} 
+	
+	private int suitVal(Card c)
+	{
+		switch(c.suit)
+		{
+		case SPADES: return 0;
+		case CLUBS: return 1;
+		case DIAMONDS: return 2;
+		case HEARTS: return 3;
+		}
+		return 0;
+	}
+	
+	private boolean greaterThan(Card A, Card B, int suit)
+	{
+		int suitA = suitVal(A);
+		int suitB = suitVal(B);
+		
+		if(suitA == suit && suitA !=0)
+		{
+			if(suitB == suit)
+			{
+				return B.rank > A.rank ? false : true;
+			}
+			else if(suitB == 0)
+			{
+				return false;
+			}
+			else
+			{
+				return true;
+			}
+		}
+		else if(suitA == 0)
+		{
+			if(suitB == 0)
+			{
+				return B.rank > A.rank ? false : true;
+			}
+			else
+			{
+				return true;
+			}
+			
+		}
+		else
+			return true;
 	}
 	
 	private Card retCard(int s, int val)
 	{
-		
+
 		Card x = null;
 		switch(s)
 		{
@@ -229,4 +296,226 @@ public class BitAgent implements MSWAgent  {
 		return x;
 	}
 
+	private int[] beatable(int[] hand, int [] grave, int curSuit, ArrayList<Card> table, boolean otherSuits[][])
+	{
+		//Both cards on table
+		if(table.size() == 2)
+		{
+			//play a card bigger than both
+			
+		}
+		
+		if(table.isEmpty())
+		{
+			
+			for(int k = 0; k < 4; k++)
+			{
+				if(!((otherSuits[0][curSuit] == true && otherSuits[0][0] == false) || (otherSuits[1][curSuit] == true && otherSuits[1][0] == false)))
+				{
+					//look for unbeatable card if found play
+					//else play trash
+					
+					int start = binlog(Integer.highestOneBit(((~grave[0])&(~hand[0]))));
+					int found = -1;
+					for(int i = start; i < 13; i++)
+					{
+						if( ((1 << i) & hand[k]) != 0)
+						{
+							found = i;
+							break;
+						}
+					}
+
+					//If beatable play the spade
+					if(found != -1)
+					{
+						return new int[] {k, found};
+					}
+				}
+			}
+		
+			
+			
+		}
+		
+		/*Card highcard = null;
+		for(int i =0; i <table.size(); i++)
+		{
+			if(highcard == null)
+			{
+				highcard = table.get(i);
+			}
+			else
+			{
+				if(greaterThan(table.get(i), highcard, curSuit))
+				{
+					highcard = table.get(i);
+				}
+			}
+		}*/
+		
+		
+		//out stands for out and has spades
+		
+		boolean out = false;
+		if(otherSuits[0][curSuit] == true && otherSuits[0][0] == false)
+		{
+			out = true;
+		}
+		if(otherSuits[1][curSuit] == true && otherSuits[1][0] == false)
+		{
+			out = true;
+		}
+
+		if(out)
+		{
+			//Check if out of cards of the required deck
+			if(hand[curSuit] == 0)
+			{
+				//Check if have any spades if not throw a trashy card of any deck but spades
+				if(hand[0] == 0)
+				{
+					int removeSuit = removeWorstHand(hand);
+					int removal = binlog(Integer.lowestOneBit(hand[removeSuit]));
+					return new int[] {removeSuit, removal};
+				}
+
+				//check if possible to beat with spades
+				int start = binlog(Integer.highestOneBit(((~grave[0])&(~hand[0]))));
+				int found = -1;
+				for(int i = start; i < 13; i++)
+				{
+					if( ((1 << i) & hand[0]) != 0)
+					{
+						found = i;
+						break;
+					}
+				}
+
+				//If beatable play the spade
+				if(found != -1)
+				{
+					return new int[] {0, found};
+				}
+				//else throw a trashy card of any deck but spades
+				else
+				{
+					int removeSuit = removeWorstHand(hand);
+					int removal = binlog(Integer.lowestOneBit(hand[removeSuit]));
+
+					return new int[] {removeSuit, removal};
+
+				}
+			}
+			//Throw a bad card of the deck since it can't win
+			else
+			{
+				return new int[] {curSuit, binlog(Integer.lowestOneBit(hand[curSuit]))};
+			}
+		}
+		//If others still have the cards
+		else
+		{
+			//If out of cards throw the lowest spade
+			if(hand[curSuit] == 0)
+			{
+				//Check if have any spades if not throw a trashy card of any deck but spades
+				if(hand[0] == 0)
+				{
+					int removeSuit = removeWorstHand(hand);
+					int removal = binlog(Integer.lowestOneBit(hand[removeSuit]));
+					return new int[] {removeSuit, removal};
+
+				}
+				else
+				{
+					return new int[] {0, binlog(Integer.lowestOneBit(hand[0]))};
+				}
+			}
+			//checks if beatable
+			else
+			{
+				int start = binlog(Integer.highestOneBit(((~grave[curSuit])&(~hand[curSuit]))));
+				int found = -1;
+				for(int i = start; i < 13; i++)
+				{
+					if( ((1 << i) & hand[curSuit]) != 0 )
+					{
+						found = i;
+						break;
+					}
+				}
+
+				//if beatable throw card
+				if(found != -1)
+				{
+					return new int[] {curSuit, found};
+				}
+				//play trash card of the same deck
+				else
+				{
+					return new int[] {curSuit, binlog(Integer.lowestOneBit(hand[curSuit]))};
+				}
+			}
+		}
+
+	}
+	
+	//https://stackoverflow.com/questions/3305059/how-do-you-calculate-log-base-2-in-java-for-integers
+	//It is slightly faster than Integer.numberOfLeadingZeros() (20-30%) 
+	//and almost 10 times faster (jdk 1.6 x64) than a Math.log() based implementation
+	
+	/**
+	 * 
+	 * @param bits Set which to check on
+	 * @return location of the bit
+	 */
+	public static int binlog( int bits ) // returns 0 for bits=0
+	{
+	    int log = 0;
+	    if( ( bits & 0xffff0000 ) != 0 ) { bits >>>= 16; log = 16; }
+	    if( bits >= 256 ) { bits >>>= 8; log += 8; }
+	    if( bits >= 16  ) { bits >>>= 4; log += 4; }
+	    if( bits >= 4   ) { bits >>>= 2; log += 2; }
+	    return log + ( bits >>> 1 );
+	}
+	
+	
+	/******************
+	 * 
+	 * DEBUGGING PURPOSES ONLY
+	 *
+	 */
+	
+	
+	public void printCards()
+	{
+		for(int i = 0; i < 4; i++)
+		{
+			for(int j = 0; j < 13; j++)
+			{
+				if((hand[i] & (1 << j)) != 0)
+				{
+					System.out.print(retCard(i, j).toString() +" ");
+				}
+			}
+		}
+		System.out.println();
+	}
+	
+	public void printGrave()
+	{
+		for(int i = 0; i < 4; i++)
+		{
+			for(int j = 0; j < 13; j++)
+			{
+				if((grave[i] & (1 << j)) != 0)
+				{
+					System.out.print(retCard(i, j).toString() +" ");
+				}
+			}
+		}
+		System.out.println();
+	}
+	
 }
