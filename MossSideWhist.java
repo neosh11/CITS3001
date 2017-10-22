@@ -1,3 +1,5 @@
+package mosssidewhist;
+
 import java.util.*;
 import java.io.*;
 
@@ -56,11 +58,56 @@ public class MossSideWhist{
    * @param report, a printstream to display to game state.
    **/
   public void playGame(int rounds, PrintStream report){
+	
+	
+	
+	class scoretally
+	{
+		String name[] = new String[3];
+		int scores[] = new int[3];
+		
+		public scoretally(String p1, String p2, String p3)
+		{
+			name[0] = p1;
+			name[1] = p2;
+			name[2] = p3;
+		}
+		
+		public void addScore(String name, int score)
+		{
+			if(name.equals(this.name[0]))
+			{
+				scores[0] += score;
+			}
+			else if(name.equals(this.name[1]))
+			{
+				scores[1] += score;
+			}
+			else if(name.equals(this.name[2]))
+			{
+				scores[2] += score;
+			}
+		}
+		
+		public void printscores()
+		{
+			report.println(name[0]+": "+scores[0]);
+		    report.println(name[1]+": "+scores[1]);
+		    report.println(name[2]+": "+scores[2]);
+		}
+		
+	}
+	
+    scoretally scor = new scoretally(leader, left, right);
     this.report = report;
-    for(int i = 0; i<3*rounds; i++){
+    for(int i = 0; i<rounds; i++){
       playHand();
+      scor.addScore(leader, scoreboard.get(leader));
+      scor.addScore(left, scoreboard.get(left));
+      scor.addScore(right, scoreboard.get(right));
       String tmp = leader; leader = left; left = right; right = tmp;
     }
+    scor.printscores();
   }
 
   //Maybe should pass in the report as an argument?
@@ -93,6 +140,8 @@ public class MossSideWhist{
     agents.get(left).seeScore(scoreboard); 
     agents.get(right).seeScore(scoreboard);
   showScores();  
+  
+  System.out.println("\n");
   }
 
   /**
@@ -238,8 +287,9 @@ public class MossSideWhist{
   }
 
   public static void main(String[] args){
-    MossSideWhist game = new MossSideWhist(new RandomAgent(), new RandomAgent(), new RandomAgent());
-    game.playGame(1, System.out);
+    MossSideWhist game = new MossSideWhist(new ProjectAgent(), new ProjectAgent2(), new RandomAgent());
+    game.playGame(1000, System.out);
+    
   }
 }
 
