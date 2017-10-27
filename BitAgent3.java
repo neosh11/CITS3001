@@ -829,6 +829,7 @@ class Simulator2
 	}
 
 	//TODO FIX THIS, LOTS OF NULL RETURNS FOR SOME REASON
+	
 	static Card simulateBest(View X, int currWinner, int scores[], int removes[])
 	{
 		//https://stackoverflow.com/questions/81346/most-efficient-way-to-increment-a-map-value-in-java
@@ -851,10 +852,11 @@ class Simulator2
 		//Time Limited
 		
 		long endTime = System.currentTimeMillis() + 180;
-		
+		int countOfEval = 0;
 		while(System.currentTimeMillis() < endTime)
 		{
 
+			countOfEval++;
 			int leftOvers[] = new int[4];
 			int leftP[] = new int[4];
 			int rightP[] = new int[4];
@@ -939,6 +941,7 @@ class Simulator2
 			}
 		}
 
+		System.out.println("COUNT: "+ countOfEval);
 
 		Card toReturn = null;
 		int maximum = 0;
@@ -953,6 +956,7 @@ class Simulator2
 			int[] ar =removeWorstHand(X.hand);
 			return BitAgent3.retCard(ar[0], ar[1]);
 		}
+		
 		return toReturn;
 
 	}
@@ -1074,9 +1078,10 @@ class State
 					State tempS = new State(tempV, a.depth+1, (a.turn+4)%3, a.left, a.right, tempScore, tempWinner);
 					
 					returnScores = max(tempS, tempScore, null);
-					if(returnScores[0] > maximum)
+					int maxOfOthers = returnScores [1]> returnScores[2]? returnScores [1] : returnScores [2];
+					if(returnScores[0] - maxOfOthers> maximum)
 					{
-						maximum = returnScores[0];
+						maximum = returnScores[0] - maxOfOthers;
 						maxC = new int [] {k, cards[k]};
 						scoreSet = returnScores.clone();
 					}
@@ -1114,9 +1119,10 @@ class State
 					tempS.left[k] = tempS.left[k] & ~ (1<<cards[k]);
 
 					returnScores = max(tempS, tempScore, null);
-					if(returnScores[1] > maximum)
+					int maxOfOthers = returnScores [0]> returnScores[2]? returnScores [0] : returnScores [2];
+					if(returnScores[1] - maxOfOthers > maximum)
 					{
-						maximum = returnScores[1];
+						maximum = returnScores[1] -maxOfOthers;
 						maxC = new int [] {k, cards[k]};
 						scoreSet = returnScores.clone();
 					}
@@ -1155,10 +1161,11 @@ class State
 					tempS.right[k] = tempS.right[k] & ~ (1<<cards[k]);
 
 					returnScores = max(tempS, tempScore, null);
+					int maxOfOthers = returnScores [0]> returnScores[1]? returnScores [0] : returnScores [1];
 					
-					if(returnScores[2] > maximum)
+					if(returnScores[2] - maxOfOthers > maximum)
 					{
-						maximum = returnScores[2];
+						maximum = returnScores[2]- maxOfOthers;
 						maxC = new int [] {k, cards[k]};
 						scoreSet = returnScores.clone();
 					}
@@ -1328,7 +1335,7 @@ class State
 					//else play trash
 
 					//highest card
-					int start = BitAgent3.binlog(Integer.highestOneBit(((~grave[k] &0b1111111111111)&(~hand[k] &0b1111111111111))));
+					int start = BitAgent3.binlog(Integer.highestOneBit((~grave[k]&~hand[k])&BitAgent3.THIRTEEN));
 					for(int i = start; i < 13; i++)
 					{
 						if( ((1 << i) & hand[k]) != 0)
@@ -1378,7 +1385,7 @@ class State
 				}
 
 				//check if possible to beat with spades
-				int start = BitAgent3.binlog(Integer.highestOneBit( tableB[0] | ((~grave[0] &0b1111111111111)&(~hand[0] &0b1111111111111))));
+				int start = BitAgent3.binlog(Integer.highestOneBit( tableB[0] | ((~grave[0] &~hand[0] & BitAgent3.THIRTEEN))));
 
 				int found = -1;
 				for(int i = start; i < 13; i++)
@@ -1423,7 +1430,6 @@ class State
 				//Check if have any spades if not throw a trashy card of any deck but spades
 				if(hand[0] == 0)
 				{
-					//TODO
 					for(int k = 0; k < 4; k++)
 						returnStuff[k] = BitAgent3.binlog(Integer.lowestOneBit(hand[k]));
 					return returnStuff;
@@ -1438,7 +1444,7 @@ class State
 			else
 			{
 
-				int start = BitAgent3.binlog(Integer.highestOneBit(tableB[curSuit] | ((~grave[curSuit] &0b1111111111111)&(~hand[curSuit] &0b1111111111111))));
+				int start = BitAgent3.binlog(Integer.highestOneBit(tableB[curSuit] | ((~grave[curSuit] & ~hand[curSuit]) & BitAgent3.THIRTEEN)));
 				int found = -1;
 				for(int i = start; i < 13; i++)
 				{
