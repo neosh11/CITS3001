@@ -10,6 +10,8 @@ public class BitAgent3 implements MSWAgent  {
 	public static final int LEFT = 1;
 	public static final int RIGHT = 2;
 	public static final int THIRTEEN= 0b1111111111111;
+	
+	public static long maxTime = 0;
 
 	public static final String NAME = "DirtyBit";
 
@@ -87,10 +89,16 @@ public class BitAgent3 implements MSWAgent  {
 	@Override
 	public Card playCard() {
 
+		long startTime = System.currentTimeMillis();
 		
 		Card toRet = beatable(current, currentWinner);
 		current.removeCard(suitVal(toRet), toRet.rank-2);
 
+		System.out.println("TIME FOR PLAY CARD: "+ (System.currentTimeMillis()-startTime));
+		if(maxTime < System.currentTimeMillis()-startTime)
+		{
+			maxTime = System.currentTimeMillis()-startTime;
+		}
 		return toRet;
 	}
 
@@ -281,7 +289,7 @@ public class BitAgent3 implements MSWAgent  {
 						}
 						else
 						{
-							System.out.println(suitVal(toRet)+" "+ (toRet.rank+2));
+							//System.out.println(suitVal(toRet)+" "+ (toRet.rank+2));
 							return toRet;
 						}
 
@@ -362,7 +370,7 @@ public class BitAgent3 implements MSWAgent  {
 					}
 					else
 					{
-						System.out.println(suitVal(toRet)+" "+ (toRet.rank+2));
+						//System.out.println(suitVal(toRet)+" "+ (toRet.rank+2));
 						return toRet;
 						//return removeWorstHand(X.hand);
 					}
@@ -439,7 +447,7 @@ public class BitAgent3 implements MSWAgent  {
 				}
 				else
 				{
-					System.out.println(suitVal(toRet)+" "+ (toRet.rank+2));
+					//System.out.println(suitVal(toRet)+" "+ (toRet.rank+2));
 					return toRet;
 				}
 			}
@@ -840,7 +848,11 @@ class Simulator2
 
 		HashMap<Card,MutableInt> map = new HashMap<Card, MutableInt>();
 
-		for(int i = 0; i < 100; i++)
+		//Time Limited
+		
+		long endTime = System.currentTimeMillis() + 180;
+		
+		while(System.currentTimeMillis() < endTime)
 		{
 
 			int leftOvers[] = new int[4];
@@ -1021,7 +1033,7 @@ class State
 	int [] max(State a, int scores[], int choice[])
 	{
 
-		if(a.depth > 10 || a.current.handSize() < 2)
+		if(a.depth > 12 || a.current.handSize() < 2)
 		{
 			return scores;
 		}
