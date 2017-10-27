@@ -1,3 +1,5 @@
+package mosssidewhist;
+
 import java.util.*;
 
 public class RandomAgent implements MSWAgent{
@@ -80,10 +82,10 @@ public class RandomAgent implements MSWAgent{
    * This method will only be called once.
    * */
   public String sayName(){
-    String name= "";
-    for(int i = 0; i<6; i++)
-      name+=(char)('A'+rand.nextInt(26));
-    return name;
+//    String name= "";
+//    for(int i = 0; i<6; i++)
+//      name+=(char)('A'+rand.nextInt(26));
+    return "random";
   }
 
 }
