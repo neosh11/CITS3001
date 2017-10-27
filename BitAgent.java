@@ -13,7 +13,6 @@ public class BitAgent implements MSWAgent  {
 	private int hand[];
 	private int grave[];
 	private int tableB[];
-	private int curWinner;
 
 	private int tricks;
 
@@ -22,14 +21,10 @@ public class BitAgent implements MSWAgent  {
 	//Sets upperbounds on players
 	public int otherSuits[][];
 
-	private int removal[];
-	private int scores[];
-
 	public ArrayList<Card> table;
 
 
 	private String leftAgent;
-	//Ignore not used for now
 	private String rightAgent;
 
 
@@ -37,8 +32,6 @@ public class BitAgent implements MSWAgent  {
 
 		table = new ArrayList<Card>();
 		tricks = 0;
-		removal = new int[2];
-		scores = new int[2];
 	}
 
 	@Override
@@ -67,31 +60,12 @@ public class BitAgent implements MSWAgent  {
 			otherSuits[0][i] = binlog(Integer.highestOneBit((~grave[i]& ~this.hand[i] & 0b1111111111111)));
 			otherSuits[1][i] = otherSuits[0][i];
 		}
-
-		if(LEADER == (order + 1)%3)
-		{
-			removal[0]= 8;
-		}
-		else
-		{
-			removal[0]= 4;
-		}
-
-		if(LEADER == (3+order - 1)%3)
-		{
-			removal[0]= 8;
-		}
-		else
-		{
-			removal[0]= 4;
-		}
 	}
 
 
 	@Override
 	public Card[] discard() {
-		//TODO
-		//if(order != 0) return new int[] {};
+		
 		Card[] discard = new Card[4];
 		for(int i = 0; i<4;i++)
 		{
@@ -143,47 +117,7 @@ public class BitAgent implements MSWAgent  {
 				}
 			}
 		}
-
-
-		/*if(table.size() == 2)
-		{
-			if(suitVal(table.get(0)) == suitVal(table.get(1)))
-			{
-				if(agent.equals(leftAgent))
-				{
-					//if(table.get(0).rank < table.get(1).rank)
-					//otherSuits[0][(suitVal(table.get(0)))] = -1;
-				}
-				else if(agent.equals(rightAgent))
-				{
-					otherSuits[1][(suitVal(table.get(0)))] = -1;
-				}
-			}
-
-		}
-
-		else if(table.size() == 3)
-		{
-			if(suitVal(table.get(0)) == suitVal(table.get(2)))
-			{
-				if(agent.equals(leftAgent))
-				{
-					//if(table.get(0).rank < table.get(1).rank)
-					//otherSuits[0][(suitVal(table.get(0)))] = -1;
-					//table
-
-				}
-				else if(agent.equals(rightAgent))
-				{
-					otherSuits[1][(suitVal(table.get(0)))] = -1;
-				}
-			}
-
-		}*/
-
-
-
-
+		
 		grave[suitVal(card)] = grave[suitVal(card)] | (1 << card.rank-2);
 
 		for(int i =0; i < 4; i++)
@@ -217,9 +151,7 @@ public class BitAgent implements MSWAgent  {
 	@Override
 	public void seeScore(Map<String, Integer> scoreboard) {
 		// TODO Auto-generated method stub
-
-		scores[0] = scoreboard.get(leftAgent);
-		scores[1] = scoreboard.get(rightAgent);
+		
 	}
 
 	@Override
@@ -244,12 +176,24 @@ public class BitAgent implements MSWAgent  {
 
 		int min = 50;
 		int sec = 0;
+		int countAssociated = 100;
 		for(int i = 0; i < 3; i++)
 		{
+			
 			if(pc[i]< min && pc[i] != -1)
 			{
 				sec = i+1;
 				min = pc[i];
+				countAssociated = Integer.bitCount(hand[i]);
+			}
+			else if(pc[i] == min && pc[i] != -1)
+			{
+				if(Integer.bitCount(hand[i]) < countAssociated)
+				{
+					sec = i+1;
+					min = pc[i];
+					countAssociated = Integer.bitCount(hand[i]);
+				}
 			}
 		}
 
@@ -650,153 +594,5 @@ public class BitAgent implements MSWAgent  {
 		case DIAMONDS: hand[2] = (hand[2]|(1 << c.rank-2)); break;
 		case HEARTS: hand[3] = (hand[3]|(1 << c.rank-2)); break;
 		}
-	}
-
-	int [] constructHand(int leftOvers[], int otherSuits[][], int size)
-	{
-
-
-
-		return null;
-	}
-
-	int simulate(int hand[], int grave[], int otherSuits[][], int table[])
-	{
-		int leftOvers[] = new int[4];
-
-		int leftP[] = new int[4];
-		int rightP[] = new int[4];
-
-		for(int i = 0; i < 4; i++)
-		{
-			leftOvers[i] = (~grave[i] & ~hand[i] & THIRTEEN);
-		}
-
-		int tSize = Integer.bitCount(table[0]) + Integer.bitCount(table[1]) + Integer.bitCount(table[2]) + Integer.bitCount(table[3]);
-
-		 //0 for agent 1 for left, 2 for right
-
-		if(tSize == 0)
-		{
-			//leftP= constructHand(leftOvers, otherSuits, size);
-			//rightP= constructHand(leftOvers, otherSuits, size);
-		}
-		else if(tSize == 1)
-		{
-			//leftP= constructHand(leftOvers, otherSuits, size);
-			//rightP= constructHand(leftOvers, otherSuits, size);
-
-		}
-		else
-		{
-			//leftP= constructHand(leftOvers, otherSuits, size);
-			//rightP= constructHand(leftOvers, otherSuits, size);	
-		}
-
-		//get current winner
-
-
-		//Simulate a minimax assuming players play greedy if possible
-
-		//Return card which on play gives best result
-
-		
-		
-		for(int i = 0; i < 4; i++)
-		{
-			for(int j = 0; j < 13; j++)
-			{
-				if( ((1 << j) & hand[i]) != 0)
-				{
-					
-					int winner = curWinner;
-					int turn = 0;
-					int tempTSize = tSize;
-					int tempTable[] = table.clone();
-					int tempHand[] = hand.clone();
-					int tempLeft[] = leftP.clone();
-					int tempRight[] = rightP.clone();
-					int tempGrave[] = grave.clone();
-					//int tempOtherSuits[][] = otherSuits.clone();
-					
-					int [][] tempOtherSuits = new int[otherSuits.length][];
-					for(int k = 0; k < otherSuits.length; k++)
-					{
-					  int[] aMatrix = otherSuits[i];
-					  int   aLength = aMatrix.length;
-					  tempOtherSuits[i] = new int[aLength];
-					  System.arraycopy(aMatrix, 0, tempOtherSuits[i], 0, aLength);
-					}
-					
-					//Simulate playing this card
-					int min = 100;
-
-					//pick the card with minimum return back to win time,
-					//if a card with return = 1 found play it baby
-
-					//How to simulate game??
-
-					
-					boolean found = false;
-					while(!found)
-					{
-						if(tempTSize == 0)
-						{
-							
-						}
-						else if(tempTSize == 1)
-						{
-							
-						}
-						else if (tempTSize == 2)
-						{
-							
-						}
-						else
-						{
-							//clear table
-						}
-						
-					}
-				}
-			}
-
-		}
-
-		return -1;
-	}
-
-	private boolean greaterThan(int suit1, int card1, int suit2, int card2, int suit)
-	{
-
-		if(suit1 == suit && suit1 !=0)
-		{
-			if(suit2 == suit)
-			{
-				return card2 > card1 ? false : true;
-			}
-			else if(suit2 == 0)
-			{
-				return false;
-			}
-			else
-			{
-				return true;
-			}
-		}
-		else if(suit1 == 0)
-		{
-			if(suit2 == 0)
-			{
-				return card2 > card1 ? false : true;
-			}
-			else
-			{
-				return true;
-			}
-
-		}
-		else
-			return true;
 	}
 }
