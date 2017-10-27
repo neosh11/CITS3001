@@ -88,6 +88,7 @@ public class MossSideWhist{
 		for(int i = 0; i<16; i++){
 			display(leader); display(left); display(right);  
 			first = trick(first);
+			
 			scoreboard.put(first, scoreboard.get(first)+1);
 		}
 		scoreboard.put(leader, scoreboard.get(leader)-8);
@@ -149,6 +150,18 @@ public class MossSideWhist{
 		display(second, true);  
 		Card next = agents.get(second).playCard();
 		hand = hands.get(second);
+		//++++++++++++++++++++
+		if(!second.substring(0,1).equals("r"))
+		{
+			if(!legal(next, second, lead.suit))
+			{
+				System.out.println(second);
+				System.out.println(next.toString());
+				System.out.println("FAILURE");
+				System.exit(0);
+			}
+		}
+		//************************************
 		while(!legal(next, second, lead.suit))
 			next = hand.get(rand.nextInt(hand.size()));
 		hand.remove(next);
@@ -263,21 +276,29 @@ public class MossSideWhist{
 
 		PrintStream repo = null;
 		try {
-			repo = new PrintStream(new File("Engineer.txt"));
+			repo = new PrintStream(new File("abc.txt"));
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		for(int i = 0; i < 100; i++)
+//		
+		for(int i = 0; i < 10; i++)
 		{
-			MossSideWhist game = new MossSideWhist(new BitAgent(), new RandomAgent(), new RandomAgent());
-			game.playGame(1, repo);
+			MossSideWhist game = new MossSideWhist(new BitAgent3(), new BitAgent(), new RandomAgent());
+			
+			game.playGame(3, repo);
 			
 			maximum();
 		}
 		System.out.println(wins[0]);
 		System.out.println(wins[1]);
 		System.out.println(wins[2]);
+		
+		System.out.println("TREE: "+ BitAgent3.maxTime);
+		
+////		
+//		MossSideWhist game = new MossSideWhist(new BitAgent3(), new BitAgent(), new BitAgent());
+//		game.playGame(100, System.out);
 	}
 }
 
